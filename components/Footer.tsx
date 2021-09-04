@@ -6,17 +6,17 @@ const Footer = () => {
           &copy;{new Date().getFullYear()} Minting Music. All rights
           reserved.
           <div className="pt-4 md:p-0 text-center md:text-right text-xs">
-            <a href="#" className="text-black no-underline hover:underline">
+            <a href="https://mintingmusic.com/privacy.html" className="text-black no-underline hover:underline">
               Privacy Policy
             </a>
             <a
-              href="#"
+              href="https://mintingmusic.com/terms.html"
               className="text-black no-underline hover:underline ml-4"
             >
               Terms &amp; Conditions
             </a>
             <a
-              href="#"
+              href="https://mintingmusic.com/index.html#map-area"
               className="text-black no-underline hover:underline ml-4"
             >
               Contact Us
