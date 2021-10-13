@@ -9,105 +9,187 @@ import { useQuery, useLazyQuery } from '@apollo/client'
 import { MetadataField } from 'mintbase'
 
 import Image from 'next/image'
+
 import React, { useRef, forwardRef, useImperativeHandle, Ref } from 'react'
+
 //import * from 'react'
 
-import {Player, BigPlayButton, ControlBar} from 'video-react';
+import { Player, BigPlayButton, ControlBar } from 'video-react';
+
 import 'video-react/dist/video-react.css';
+
 //import Video from 'react-native-video';
 
+var _nearApiJs = require("near-api-js");
+
 const FETCH_STORE = gql`
-  query FetchStore($storeId: String!, $limit: Int = 20, $offset: Int = 0) {
-    store(where: { id: { _eq: $storeId } }) {
-      id
-      name
-      symbol
-      baseUri
-      owner
-      minters {
-        account
-        enabled
-      }
-      things(limit: $limit, offset: $offset) {
-        id
-        memo
-        metaId
-        tokens_aggregate {
-          aggregate {
-            count
-          }
-        }
-        tokens(limit: 1, offset: 0) {
-          id
-          minter
-          royaltys {
-            account
-            percent
-          }
-          splits {
-            account
-            percent
-          }
-        }
-      }
-    }
-  }
+
+query FetchStore($storeId: String!, $limit: Int = 20, $offset: Int = 0) {
+
+store(where: { id: { _eq: $storeId } }) {
+
+id
+
+name
+
+symbol
+
+baseUri
+
+owner
+
+minters {
+
+account
+
+enabled
+
+}
+
+things(limit: $limit, offset: $offset) {
+
+id
+
+memo
+
+metaId
+
+tokens_aggregate {
+
+aggregate {
+
+count
+
+}
+
+}
+
+tokens(limit: 1, offset: 0) {
+
+id
+
+minter
+
+royaltys {
+
+account
+
+percent
+
+}
+
+splits {
+
+account
+
+percent
+
+}
+
+}
+
+}
+
+}
+
+}
+
 `
 
 const FETCH_TOKENS = gql`
-  query FetchTokensByStoreId($storeId: String!, $limit: Int, $offset: Int) {
-    metadata(
-      order_by: { thing_id: asc } 
-      where: {thing: {storeId: {_eq: $storeId}, tokens: {list: {removedAt: {_is_null: true}}}}}
-      limit: $limit
-      offset: $offset
-      distinct_on: thing_id
-    ) {
-      id
-      media
-      animation_url
-      title
-      thing_id
-      thing {
-        id
-        metaId
-        memo
-        tokens(distinct_on: id, where: {list: {removedAt: {_is_null: true}}}) {
-                 id
-                 list {
-                   price
-                 }
-             }
-      }
-    }
-  }
+
+query FetchTokensByStoreId($storeId: String!, $limit: Int, $offset: Int) {
+
+metadata(
+
+order_by: { thing_id: asc }
+
+where: {thing: {storeId: {_eq: $storeId}, tokens: {list: {removedAt: {_is_null: true}}}}}
+
+limit: $limit
+
+offset: $offset
+
+distinct_on: thing_id
+
+) {
+
+id
+
+media
+
+animation_url
+
+title
+
+thing_id
+
+animation_type
+
+thing {
+
+id
+
+metaId
+
+memo
+
+tokens(distinct_on: id, where: {list: {removedAt: {_is_null: true}}}) {
+
+id
+
+list {
+
+price
+
+}
+
+}
+
+}
+
+}
+
+}
+
 `
 
-
 const useAudio = (url: string) => {
+
   const audio = useRef<HTMLAudioElement | undefined>(
+
     typeof Audio !== "undefined" ? new Audio(url) : undefined
+
   );
-  
-  
+
   const [playing, setPlaying] = useState(false);
 
   const toggle = () => {
+
     setPlaying(!playing);
+
   }
 
-
   useLayoutEffect(() => {
-      playing ? audio.current?.play() : audio.current?.pause();
-    },
+
+    playing ? audio.current?.play() : audio.current?.pause();
+
+  },
+
     [playing]
+
   );
 
   useEffect(() => {
+
     audio.current?.addEventListener('ended', () => setPlaying(false));
+
     return () => {
+
       audio.current?.removeEventListener('ended', () => setPlaying(false));
+
     };
+
   }, []);
 
   return [playing, toggle] as const;
@@ -115,20 +197,33 @@ const useAudio = (url: string) => {
 };
 
 const useBuy = (tokenID: string, tokenPrice: string) => {
+
   const { wallet } = useWallet();
-  const tokenPriceNumber = Number(tokenPrice) ;
-  tokenPrice = (tokenPriceNumber).toLocaleString('fullwide', {useGrouping:false})
+
+  const tokenPriceNumber = Number(tokenPrice);
+
+  tokenPrice = (tokenPriceNumber).toLocaleString('fullwide', { useGrouping: false })
+
   const buy = () => {
+
     //wallet?.makeOffer(tokenID,tokenPrice,{ marketAddress: "market.mintspace2.testnet"})
-    wallet?.makeOffer(tokenID,tokenPrice,{ marketAddress: process.env.marketAddress})
+
+    wallet?.makeOffer(tokenID, tokenPrice, { marketAddress: process.env.marketAddress })
+
   }
+
   return buy;
+
 }
 
-const NFT = ({ baseUri, metaId, url, tokens}: { baseUri: string; metaId: string; url: string; tokens: [Token]}) => {
-  const [metadata, setMetadata] = useState<{[key: string]: string} | null>(null)
+const NFT = ({ baseUri, metaId, url, anim_type, tokens }: { baseUri: string; metaId: string; url: string; anim_type: string, tokens: [Token] }) => {
+
+  const [metadata, setMetadata] = useState<{ [key: string]: string } | null>(null)
+
   const { wallet, isConnected, details } = useWallet();
+
   const fetchMetadata = async (url: string) => {
+
     const response = await fetch(url)
 
     const result = await response.json()
@@ -136,232 +231,417 @@ const NFT = ({ baseUri, metaId, url, tokens}: { baseUri: string; metaId: string;
     if (!result) return
 
     setMetadata(result)
+
   }
 
   //this position of useAudio is important cause of too many renders in previous call
-  
-  
+
   //This line is an expensive line, I don't want it be executed if url is null
-  
-  const aw = url!=null ? url : "1";
+
+  const aw = url != null ? url : "1";
+
   const anim_url = aw.split("https://arweave.net/").pop();
+
   //const [playing, toggle] = useAudio(`https://coldcdn.com/api/cdn/bronil/${anim_url}`);
-  const url2 = `https://coldcdn.com/api/cdn/bronil/${anim_url}` ;
-  
-     
-  const buy = useBuy(tokens[0]['id'],tokens[0].list.price) ;
-  const price = (Number(tokens[0].list.price))/1e+24 ;
+
+  const url2 = `https://coldcdn.com/api/cdn/bronil/${anim_url}`;
+
+  const buy = useBuy(tokens[0]['id'], tokens[0].list.price);
+
+  //const price = (Number(tokens[0].list.price))/1e+24 ;
+
+  // change these too. Put NEAR js funcs --- DONE
+
+  const tokenPriceNumber = Number(tokens[0].list.price);
+
+  // Number.toLocaleString() rounds after 16 decimal places, so be careful
+
+  const price = _nearApiJs.utils.format.formatNearAmount((tokenPriceNumber).toLocaleString('fullwide', { useGrouping: false }), 2);
 
   useEffect(() => {
+
     fetchMetadata(`${baseUri}/${metaId}`)
+
   }, [])
 
   if (!metadata) return null
 
   // const aw2 = metadata[MetadataField.Media];
+
   // const mediaHash = aw2.split("https://arweave.net/").pop();
-  
+
   return (
+
     <div className="w-full md:w-1/2 lg:w-1/3 mb-4 pb-40 px-3">
+
       <div className="h-96">
+
         <div className="relative items-center min-h-full pb-10">
-          {/* <a href="#">
-            <Image
-              alt={metadata[MetadataField.Title]}
-              src={metadata[MetadataField.Media]}
-              //src={`https://coldcdn.com/api/cdn/bronil/${mediaHash}`}
-              layout="fill"
-              objectFit="contain"
-            />
-          </a> */}
-          <Player
+
+          {!anim_type &&
+
+            <a href="#">
+
+              <Image
+
+                alt={metadata[MetadataField.Title]}
+
+                src={metadata[MetadataField.Media]}
+
+                //src={`https://coldcdn.com/api/cdn/bronil/${mediaHash}`}
+
+                layout="fill"
+
+                objectFit="contain"
+
+              />
+
+            </a>
+
+          }
+
+          {anim_type &&
+
+            <Player
+
               playsInline
+
               poster={metadata[MetadataField.Media]}
+
               src={url2}
-              //
-          >
-            <BigPlayButton position="center" />
-          </Player>
+
+            //
+
+            >
+
+              <BigPlayButton position="center" />
+
+            </Player>
+
+          }
+
         </div>
-         {/* {url &&
-          <button className="playbutton" onClick={toggle}> {playing ? "Pause" : "Play"} </button>
-         } */}
-         {/* <div> */}
-         { isConnected &&
-         <button className="playbutton" onClick={buy}>Buy | {price}N</button>
-         }
-         {/* </div> */}
+
+        {/* {url &&
+
+<button className="playbutton" onClick={toggle}> {playing ? "Pause" : "Play"} </button>
+
+} */}
+
+        {/* <div> */}
+
+        {isConnected &&
+
+          <button className="playbutton" onClick={buy}>Buy | {price}N</button>
+
+        }
+
+        {/* </div> */}
+
       </div>
+
     </div>
+
   )
+
 }
 
 const Pagination = () => {
+
   return (
+
     <div className="container max-w-4xl mx-auto pb-10 flex justify-between items-center px-3">
+
       <div className="text-xs">
+
         <a
+
           href="#"
+
           className="bg-gray-500 text-white no-underline py-1 px-2 rounded-lg mr-2"
+
         >
+
           Previous
+
         </a>
+
         <div className="hidden md:inline">
+
           <a href="#" className="text-sm px-1 text-gray-900 no-underline">
+
             1
+
           </a>
+
           <a href="#" className="text-sm px-1 text-gray-900 no-underline">
+
             2
+
           </a>
+
           <a href="#" className="text-sm px-1 text-gray-900 no-underline">
+
             3
+
           </a>
+
           <span className="px-2 text-gray">...</span>
+
           <a href="#" className="text-sm px-1 text-gray-900 no-underline">
+
             42
+
           </a>
+
         </div>
+
         <a
+
           href="#"
+
           className="bg-black text-white no-underline py-1 px-2 rounded-lg ml-2"
+
         >
+
           Next
+
         </a>
+
       </div>
 
       <div className="text-sm text-gray-600">
+
         Per page:
+
         <select className="bg-white border rounded-lg w-24 h-8 ml-1">
+
           <option>24</option>
+
           <option>48</option>
+
           <option>All</option>
+
         </select>
+
       </div>
+
     </div>
+
   )
+
 }
 
 type Store = {
+
   id: string
+
   name: string
+
   symbol: string
+
   baseUri: string
+
   owner: string
+
   minters: {
+
     account: string
+
     enabled: string
+
   }[]
+
 }
 
 type Thing = {
+
   id: string
+
   metaId: string
+
   memo: string
+
   url: string
+
+  anim_type: string
+
   tokens: [Token]
+
 }
 
 type Token = {
+
   id: string
+
   list: {
+
     price: string
+
   }
+
 }
 
-
 const Products = ({ storeId }: { storeId: string }) => {
+
   //const { wallet } = useWallet()
+
   const [store, setStore] = useState<Store | null>(null)
+
   const [things, setThings] = useState<any>([])
 
   const [getStore, { loading: loadingStoreData, data: storeData }] =
+
     useLazyQuery(FETCH_STORE, {
+
       variables: {
+
         storeId: '',
+
         limit: 10,
+
         offset: 0,
+
       },
+
     })
 
   const [getTokens, { loading: loadingTokensData, data: tokensData }] =
+
     useLazyQuery(FETCH_TOKENS, {
+
       variables: {
+
         storeId: '',
+
         limit: 10,
+
         offset: 0,
+
       },
+
     })
 
   useEffect(() => {
+
     getStore({
+
       variables: {
+
         storeId: storeId,
+
         limit: 10,
+
         offset: 0,
+
       },
+
     })
+
   }, [])
 
   useEffect(() => {
+
     if (!storeData) return
 
     if (storeData?.store.length === 0) return
 
     setStore({
+
       ...storeData.store[0],
+
     })
 
     getTokens({
+
       variables: {
+
         storeId: storeData.store[0].id,
+
         limit: 10,
+
         offset: 0,
+
       },
+
     })
+
   }, [storeData])
 
   useEffect(() => {
+
     if (!store || !tokensData) return
 
     //const things = tokensData.token.map((token: any) => token.thing)
+
     const things = tokensData.metadata.map((metadata: any) => metadata.thing)
+
     const url = tokensData.metadata.map((metadata: any) => metadata.animation_url)
-  
+
+    const anim_type = tokensData.metadata.map((metadata: any) => metadata.animation_type)
+
     for (let i = 0; i < things.length; i++) {
+
       things[i].url = url[i]
+
+      things[i].anim_type = anim_type[i]
+
     }
 
     setThings(things)
+
   }, [tokensData])
 
   return (
+
     <>
-    <div className="w-full  px-6 py-12 bg-gray-100 border-t">
-      {!loadingStoreData && (
-        <>
-          <h1 className="mb-3 text-xl text-center font-semibold tracking-widest uppercase text-gray-500 title-font md:text-4xl px-6 py-12">
-            {store?.name} Near Store
-          </h1>
-          <div className="container max-w-8xl mx-auto pb-10 flex flex-wrap">
-            {things.map((thing: Thing) => (
-              
-              <NFT
-                key={thing.metaId}
-                baseUri={store?.baseUri || 'https://arweave.net'}
-                metaId={thing.metaId}
-                url={thing.url}
-                tokens={thing.tokens}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+
+      <div className="w-full  px-6 py-12 bg-gray-100 border-t">
+
+        {!loadingStoreData && (
+
+          <>
+
+            <h1 className="mb-3 text-xl text-center font-semibold tracking-widest uppercase text-gray-500 title-font md:text-4xl px-6 py-12">
+
+              {store?.name} Near Store
+
+            </h1>
+
+            <div className="container max-w-8xl mx-auto pb-10 flex flex-wrap">
+
+              {things.map((thing: Thing) => (
+
+                <NFT
+
+                  key={thing.metaId}
+
+                  baseUri={store?.baseUri || 'https://arweave.net'}
+
+                  metaId={thing.metaId}
+
+                  url={thing.url}
+
+                  anim_type={thing.anim_type}
+
+                  tokens={thing.tokens}
+
+                />
+
+              ))}
+
+            </div>
+
+          </>
+
+        )}
+
+      </div>
+
     </>
+
   )
+
 }
 
 export default Products
-
-
-
