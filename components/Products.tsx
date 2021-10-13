@@ -158,8 +158,11 @@ const NFT = ({ baseUri, metaId, url, tokens}: { baseUri: string; metaId: string;
 
   if (!metadata) return null
 
-    return (
-    <div className="w-full md:w-1/2 lg:w-1/3 mb-4 pb-20 px-3">
+  // const aw2 = metadata[MetadataField.Media];
+  // const mediaHash = aw2.split("https://arweave.net/").pop();
+  
+  return (
+    <div className="w-full md:w-1/2 lg:w-1/3 mb-4 pb-40 px-3">
       <div className="h-96">
         <div className="relative items-center min-h-full pb-10">
           {/* <a href="#">
