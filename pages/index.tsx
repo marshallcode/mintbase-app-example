@@ -20,6 +20,7 @@ const Home = () => {
       <Header />
       <Hero />
       <BasicTabs/>
+      <h2 className="mb-3 text-xl text-center font-semibold tracking-widest uppercase text-gray-500 title-font md:text-4xl px-6 py-12"><a href="http://opensea.io/SevenDeadStars" target="_blank" rel="noreferrer">View the official <b>Seven Dead Stars</b> OpenSea Store</a></h2>
       <Footer />
     </>
   )
