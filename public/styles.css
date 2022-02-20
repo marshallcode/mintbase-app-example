@@ -1,23 +1,30 @@
 @font-face {
 font-family: mintingmusic;
-  src: url(rebi.ttf);
+  src: url(fonts/rebi.ttf);
 }
 
 .headerstyle {
   background: #231F20;
   font-family: mintingmusic;
+  text-transform: uppercase;
 }
 
 .footerstyle {
   background: #231F20;
   color:white;
   font-family: mintingmusic;
+  text-transform: uppercase;
 }
 
 .footerstyle a {
   color:white;
 }
 
+.details {
+  font-family: mintingmusic;
+  text-align: start;
+  font-size: 24px;
+}
 .playbutton {
   background-color: #B1DBBB;
 font-family: mintingmusic;
@@ -30,7 +37,7 @@ font-family: mintingmusic;
   text-transform: uppercase;
   display: inline-block;
 width:100%;
-  font-size: 16px;
+  font-size: 24px;
   margin: 4px 2px;
 }
 
